@@ -3,9 +3,12 @@ package com.student.task.ui.xml
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.transition.TransitionManager
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.student.task.R
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
 import com.student.task.databinding.ItemHolidayCardBinding
 import com.student.task.databinding.ItemLoadingMoreBinding
 import com.student.task.presentation.model.CardState
@@ -73,26 +76,57 @@ class HolidayAdapter(
             binding.categoryBadge.text = holiday.category.displayName
             binding.holidayName.text = holiday.name
             binding.holidayDate.text = holiday.date
+            binding.holidayDescription.text = holiday.description
             binding.officialBadge.visibility = if (holiday.isOfficial) View.VISIBLE else View.GONE
 
             binding.cardRoot.setOnClickListener {
                 onCardClick(holiday.id)
             }
+            binding.favoriteButton.setOnClickListener {
+                onFavoriteClick(holiday.id)
+            }
+
+            TransitionManager.beginDelayedTransition(binding.cardRoot)
 
             when (uiModel.cardState) {
                 CardState.Default -> {
                     bindDefault()
                 }
                 CardState.Expanded -> {
-                    bindDefault()
+                    bindExpanded()
                 }
                 CardState.Favorite -> {
-                    bindDefault()
+                    bindFavorite()
                 }
             }
         }
 
-        private fun bindDefault() {}
+        private fun bindDefault() {
+            binding.holidayDescription.visibility = View.GONE
+            binding.expandIndicator.setImageResource(android.R.drawable.arrow_down_float)
+            binding.favoriteButton.setImageResource(android.R.drawable.btn_star_big_off)
+            binding.cardRoot.setCardBackgroundColor(
+                ContextCompat.getColor(binding.root.context, android.R.color.white)
+            )
+        }
+
+        private fun bindExpanded() {
+            binding.holidayDescription.visibility = View.VISIBLE
+            binding.expandIndicator.setImageResource(android.R.drawable.arrow_up_float)
+            binding.favoriteButton.setImageResource(android.R.drawable.btn_star_big_off)
+            binding.cardRoot.setCardBackgroundColor(
+                ContextCompat.getColor(binding.root.context, android.R.color.white)
+            )
+        }
+
+        private fun bindFavorite() {
+            binding.holidayDescription.visibility = View.GONE
+            binding.expandIndicator.setImageResource(android.R.drawable.arrow_down_float)
+            binding.favoriteButton.setImageResource(android.R.drawable.btn_star_big_on)
+            binding.cardRoot.setCardBackgroundColor(
+                ContextCompat.getColor(binding.root.context, R.color.purple_200)
+            )
+        }
 
     }
 

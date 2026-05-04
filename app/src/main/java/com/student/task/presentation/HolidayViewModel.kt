@@ -2,6 +2,7 @@ package com.student.task.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.student.task.domain.model.HolidayCategory
 import com.student.task.domain.usecase.GetHolidaysPageUseCase
 import com.student.task.presentation.model.CardState
 import com.student.task.presentation.model.HolidayUiModel
@@ -23,14 +24,22 @@ class HolidayViewModel @Inject constructor(
     private var currentPage = 0
     private var totalCount = 0
     private val allHolidays = mutableListOf<HolidayUiModel>()
+    private var selectedCategory: HolidayCategory? = null
 
     init {
         loadInitial()
     }
 
-    private fun loadInitial() {
+    private fun loadInitial(showFullscreenLoading: Boolean = true) {
         viewModelScope.launch {
-            _screenState.value = ScreenState.Loading
+            if (showFullscreenLoading) {
+                _screenState.value = ScreenState.Loading
+            } else {
+                val currentData = _screenState.value as? ScreenState.Data
+                if (currentData != null) {
+                    _screenState.value = currentData.copy(isRefreshing = true)
+                }
+            }
             totalCount = getHolidaysPageUseCase.getTotalCount()
 
             getHolidaysPageUseCase(page = 0).fold(
@@ -38,17 +47,19 @@ class HolidayViewModel @Inject constructor(
                     allHolidays.clear()
                     allHolidays.addAll(holidays.map { HolidayUiModel(it) })
                     currentPage = 0
-                    _screenState.value = ScreenState.Data(
-                        holidays = allHolidays.toList(),
-                        isLoadingMore = false,
-                        hasMorePages = allHolidays.size < totalCount,
-                        currentPage = currentPage
-                    )
+                    publishDataState(isLoadingMore = false, isRefreshing = false)
                 },
                 onFailure = { error ->
-                    _screenState.value = ScreenState.Error(
-                        message = error.message ?: "Неизвестная ошибка"
-                    )
+                    if (showFullscreenLoading) {
+                        _screenState.value = ScreenState.Error(
+                            message = error.message ?: "Неизвестная ошибка"
+                        )
+                    } else {
+                        val currentData = _screenState.value as? ScreenState.Data
+                        if (currentData != null) {
+                            _screenState.value = currentData.copy(isRefreshing = false)
+                        }
+                    }
                 }
             )
         }
@@ -65,12 +76,7 @@ class HolidayViewModel @Inject constructor(
                 onSuccess = { holidays ->
                     currentPage++
                     allHolidays.addAll(holidays.map { HolidayUiModel(it) })
-                    _screenState.value = ScreenState.Data(
-                        holidays = allHolidays.toList(),
-                        isLoadingMore = false,
-                        hasMorePages = allHolidays.size < totalCount,
-                        currentPage = currentPage
-                    )
+                    publishDataState(isLoadingMore = false, isRefreshing = current.isRefreshing)
                 },
                 onFailure = { error ->
                     _screenState.value = current.copy(isLoadingMore = false)
@@ -80,7 +86,26 @@ class HolidayViewModel @Inject constructor(
     }
 
     fun retry() {
-        loadInitial()
+        loadInitial(showFullscreenLoading = true)
+    }
+
+    fun refresh() {
+        if (_screenState.value is ScreenState.Data) {
+            loadInitial(showFullscreenLoading = false)
+        } else {
+            loadInitial(showFullscreenLoading = true)
+        }
+    }
+
+    fun selectCategory(category: HolidayCategory?) {
+        selectedCategory = category
+        val current = _screenState.value
+        if (current is ScreenState.Data) {
+            _screenState.value = current.copy(
+                holidays = filteredHolidays(),
+                selectedCategory = selectedCategory
+            )
+        }
     }
 
     fun toggleCardState(holidayId: Int) {
@@ -101,7 +126,7 @@ class HolidayViewModel @Inject constructor(
         }
         allHolidays.clear()
         allHolidays.addAll(updatedList)
-        _screenState.value = current.copy(holidays = updatedList)
+        _screenState.value = current.copy(holidays = filteredHolidays())
     }
 
     fun toggleFavorite(holidayId: Int) {
@@ -121,6 +146,23 @@ class HolidayViewModel @Inject constructor(
         }
         allHolidays.clear()
         allHolidays.addAll(updatedList)
-        _screenState.value = current.copy(holidays = updatedList)
+        _screenState.value = current.copy(holidays = filteredHolidays())
+    }
+
+    private fun filteredHolidays(): List<HolidayUiModel> {
+        val category = selectedCategory
+        if (category == null) return allHolidays.toList()
+        return allHolidays.filter { it.holiday.category == category }
+    }
+
+    private fun publishDataState(isLoadingMore: Boolean, isRefreshing: Boolean) {
+        _screenState.value = ScreenState.Data(
+            holidays = filteredHolidays(),
+            isLoadingMore = isLoadingMore,
+            isRefreshing = isRefreshing,
+            hasMorePages = allHolidays.size < totalCount,
+            currentPage = currentPage,
+            selectedCategory = selectedCategory
+        )
     }
 }

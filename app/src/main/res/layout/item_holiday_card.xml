@@ -42,6 +42,25 @@
                 android:textColor="@color/black"
                 android:textSize="11sp"
                 tools:text="Государственный" />
+
+            <ImageView
+                android:id="@+id/expandIndicator"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:src="@android:drawable/arrow_down_float"
+                android:tint="#666666" />
+
+            <ImageButton
+                android:id="@+id/favoriteButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Избранное"
+                android:padding="6dp"
+                android:src="@android:drawable/btn_star_big_off"
+                android:tint="#666666" />
         </LinearLayout>
 
         <TextView
@@ -73,6 +92,16 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/holidayDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Описание праздника" />
 
     </LinearLayout>
 
