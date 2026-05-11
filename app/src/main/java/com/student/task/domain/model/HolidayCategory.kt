@@ -4,5 +4,7 @@ enum class HolidayCategory(val displayName: String, val emoji: String) {
     OFFICIAL("Государственный", "🇷🇺"),
     PROFESSIONAL("Профессиональный", "💼"),
     INTERNATIONAL("Международный", "🌍"),
-    FOLK("Народный", "🎭")
+    FOLK("Народный", "🎭"),
+
+    DEMONSTRATION ("Несуществующий", "👻")
 }
